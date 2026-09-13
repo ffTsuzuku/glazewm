@@ -3,6 +3,7 @@
 # Build outputs
 target/
 out/
+temp/
 
 # Misc
 .DS_Store

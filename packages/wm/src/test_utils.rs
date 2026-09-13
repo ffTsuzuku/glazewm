@@ -5,8 +5,8 @@
 
 use bon::bon;
 use wm_common::{
-  FloatingStateConfig, GapsConfig, TilingDirection, WindowState,
-  WorkspaceConfig,
+  ContainerLayout, FloatingStateConfig, GapsConfig, TilingDirection,
+  WindowState, WorkspaceConfig,
 };
 use wm_platform::{Display, NativeWindow, Rect, RectDelta};
 
@@ -18,6 +18,7 @@ use crate::{
     Workspace,
   },
   traits::TilingSizeGetters,
+  wm_state::WmState,
 };
 
 pub const MOCK_MONITOR_WIDTH: i32 = 1680;
@@ -175,9 +176,14 @@ impl SplitContainer {
     #[builder(default = TilingDirection::Horizontal)]
     tiling_direction: TilingDirection,
     #[builder(default = GapsConfig::default())] gaps_config: GapsConfig,
+    layout: Option<ContainerLayout>,
     #[builder(default = vec![])] tiling_containers: Vec<TilingContainer>,
   ) -> Self {
-    let split = Self::new(tiling_direction, gaps_config);
+    let split = Self::with_layout(
+      tiling_direction,
+      layout.unwrap_or(ContainerLayout::Tiles),
+      gaps_config,
+    );
 
     for child in tiling_containers {
       attach_container(&child.into(), &split.clone().into(), None)
@@ -233,6 +239,7 @@ impl Workspace {
     #[builder(default = TilingDirection::Horizontal)]
     tiling_direction: TilingDirection,
     #[builder(default = GapsConfig::default())] gaps_config: GapsConfig,
+    layout: Option<ContainerLayout>,
     #[builder(default = vec![])] tiling_containers: Vec<TilingContainer>,
     #[builder(default = vec![])] non_tiling_windows: Vec<NonTilingWindow>,
   ) -> Self {
@@ -241,6 +248,7 @@ impl Workspace {
       display_name,
       bind_to_monitor: None,
       keep_alive: false,
+      layout,
     };
 
     let workspace = Self::new(config, gaps_config, tiling_direction);
@@ -256,5 +264,13 @@ impl Workspace {
     }
 
     workspace
+  }
+}
+
+impl WmState {
+  pub fn mock() -> Self {
+    let (event_tx, _) = tokio::sync::mpsc::unbounded_channel();
+    let (exit_tx, _) = tokio::sync::mpsc::unbounded_channel();
+    Self::new(wm_platform::Dispatcher::mock(), event_tx, exit_tx)
   }
 }

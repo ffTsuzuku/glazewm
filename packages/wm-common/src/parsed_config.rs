@@ -4,7 +4,7 @@ use wm_platform::{
   RectDelta,
 };
 
-use crate::app_command::InvokeCommand;
+use crate::{app_command::InvokeCommand, ContainerLayout};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all(serialize = "camelCase"))]
@@ -49,6 +49,9 @@ pub struct GapsConfig {
   /// Gap between window and the screen edge if there is only one window
   /// in the workspace
   pub single_window_outer_gap: Option<RectDelta>,
+
+  /// Size of accordion padding for peeking windows in accordion layout.
+  pub accordion_padding: LengthValue,
 }
 
 impl Default for GapsConfig {
@@ -63,6 +66,7 @@ impl Default for GapsConfig {
         LengthValue::from_px(0),
       ),
       single_window_outer_gap: None,
+      accordion_padding: LengthValue::from_px(30),
     }
   }
 }
@@ -385,6 +389,9 @@ pub struct WorkspaceConfig {
 
   #[serde(default = "default_bool::<false>")]
   pub keep_alive: bool,
+
+  #[serde(default)]
+  pub layout: Option<ContainerLayout>,
 }
 
 /// Helper function for setting a default value for a boolean field.

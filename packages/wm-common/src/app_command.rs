@@ -6,7 +6,7 @@ use tracing::Level;
 use uuid::Uuid;
 use wm_platform::{Delta, Direction, LengthValue, OpacityValue};
 
-use crate::TilingDirection;
+use crate::{ContainerLayout, TilingDirection};
 
 const VERSION: &str = env!("VERSION_NUMBER");
 
@@ -122,6 +122,8 @@ pub enum QueryCommand {
   Focused,
   /// Outputs the tiling direction of the focused container.
   TilingDirection,
+  /// Outputs the layout of the focused container.
+  Layout,
   /// Outputs all monitors.
   Monitors,
   /// Outputs all windows.
@@ -234,6 +236,11 @@ pub enum InvokeCommand {
   SetTilingDirection {
     #[clap(required = true)]
     tiling_direction: TilingDirection,
+  },
+  ToggleLayout,
+  SetLayout {
+    #[clap(required = true)]
+    layout: ContainerLayout,
   },
   WmCycleFocus {
     #[clap(long, default_value_t = false)]

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::ContainerDto;
-use crate::TilingDirection;
+use crate::{ContainerLayout, TilingDirection};
 
 /// User-friendly representation of a split container.
 ///
@@ -21,4 +21,5 @@ pub struct SplitContainerDto {
   pub x: i32,
   pub y: i32,
   pub tiling_direction: TilingDirection,
+  pub layout: ContainerLayout,
 }

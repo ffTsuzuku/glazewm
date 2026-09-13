@@ -1,5 +1,5 @@
 use ambassador::delegatable_trait;
-use wm_common::TilingDirection;
+use wm_common::{ContainerLayout, TilingDirection};
 use wm_platform::Direction;
 
 use super::CommonGetters;
@@ -10,6 +10,10 @@ pub trait TilingDirectionGetters: CommonGetters {
   fn tiling_direction(&self) -> TilingDirection;
 
   fn set_tiling_direction(&self, tiling_direction: TilingDirection);
+
+  fn layout(&self) -> ContainerLayout;
+
+  fn set_layout(&self, layout: ContainerLayout);
 
   /// Traverses down a container in search of a descendant in the given
   /// direction. For example, for `Direction::Right`, get the right-most
@@ -55,7 +59,7 @@ pub trait TilingDirectionGetters: CommonGetters {
 /// Implements the `TilingDirectionGetters` trait for a given struct.
 ///
 /// Expects that the struct has a wrapping `RefCell` containing a struct
-/// with a `tiling_direction` field.
+/// with `tiling_direction` and `layout` fields.
 #[macro_export]
 macro_rules! impl_tiling_direction_getters {
   ($struct_name:ident) => {
@@ -66,6 +70,14 @@ macro_rules! impl_tiling_direction_getters {
 
       fn set_tiling_direction(&self, tiling_direction: TilingDirection) {
         self.0.borrow_mut().tiling_direction = tiling_direction;
+      }
+
+      fn layout(&self) -> ContainerLayout {
+        self.0.borrow().layout
+      }
+
+      fn set_layout(&self, layout: ContainerLayout) {
+        self.0.borrow_mut().layout = layout;
       }
     }
   };

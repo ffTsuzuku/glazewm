@@ -2,8 +2,8 @@ use anyhow::Context;
 #[cfg(target_os = "windows")]
 use wm_common::WindowEffectConfig;
 use wm_common::{
-  CursorJumpTrigger, DisplayState, HideCorner, HideMethod, UniqueExt,
-  WindowState, WmEvent,
+  ContainerLayout, CursorJumpTrigger, DisplayState, HideCorner,
+  HideMethod, UniqueExt, WindowState, WmEvent,
 };
 #[cfg(target_os = "windows")]
 use wm_platform::NativeWindowWindowsExt;
@@ -13,7 +13,9 @@ use wm_platform::{Rect, WindowZOrder};
 
 use crate::{
   models::{Container, WindowContainer},
-  traits::{CommonGetters, PositionGetters, WindowGetters},
+  traits::{
+    CommonGetters, PositionGetters, TilingDirectionGetters, WindowGetters,
+  },
   user_config::UserConfig,
   wm_state::WmState,
 };
@@ -27,6 +29,21 @@ pub fn platform_sync(
 
   if state.pending_sync.needs_focus_update() {
     sync_focus(&focused_container, state)?;
+  }
+
+  let has_focus_or_reorder = state.pending_sync.needs_focus_update()
+    || !state.pending_sync.workspaces_to_reorder().is_empty();
+
+  if has_focus_or_reorder {
+    if let Some(workspace) = focused_container.workspace() {
+      for descendant in workspace.self_and_descendants() {
+        if let Ok(dir_container) = descendant.as_direction_container() {
+          if dir_container.layout() == ContainerLayout::Accordion {
+            state.pending_sync.queue_container_to_redraw(descendant);
+          }
+        }
+      }
+    }
   }
 
   if !state.pending_sync.containers_to_redraw().is_empty()

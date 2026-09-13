@@ -7,7 +7,8 @@ use std::{
 use anyhow::Context;
 use uuid::Uuid;
 use wm_common::{
-  ContainerDto, GapsConfig, SplitContainerDto, TilingDirection,
+  ContainerDto, ContainerLayout, GapsConfig, SplitContainerDto,
+  TilingDirection,
 };
 use wm_platform::Rect;
 
@@ -34,12 +35,25 @@ struct SplitContainerInner {
   child_focus_order: VecDeque<Uuid>,
   tiling_size: f32,
   tiling_direction: TilingDirection,
+  layout: ContainerLayout,
   gaps_config: GapsConfig,
 }
 
 impl SplitContainer {
   pub fn new(
     tiling_direction: TilingDirection,
+    gaps_config: GapsConfig,
+  ) -> Self {
+    Self::with_layout(
+      tiling_direction,
+      ContainerLayout::Tiles,
+      gaps_config,
+    )
+  }
+
+  pub fn with_layout(
+    tiling_direction: TilingDirection,
+    layout: ContainerLayout,
     gaps_config: GapsConfig,
   ) -> Self {
     let split = SplitContainerInner {
@@ -49,6 +63,7 @@ impl SplitContainer {
       child_focus_order: VecDeque::new(),
       tiling_size: 1.0,
       tiling_direction,
+      layout,
       gaps_config,
     };
 
@@ -71,6 +86,7 @@ impl SplitContainer {
       has_focus: self.has_focus(None),
       tiling_size: self.tiling_size(),
       tiling_direction: self.tiling_direction(),
+      layout: self.layout(),
       width: rect.width(),
       height: rect.height(),
       x: rect.x(),

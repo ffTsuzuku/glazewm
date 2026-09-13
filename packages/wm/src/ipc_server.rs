@@ -14,9 +14,9 @@ use uuid::Uuid;
 use wm_common::{
   AppCommand, AppMetadataData, BindingModesData, ClientResponseData,
   ClientResponseMessage, CommandData, EventSubscribeData,
-  EventSubscriptionMessage, FocusedData, MonitorsData, QueryCommand,
-  ServerMessage, SubscribableEvent, TilingDirectionData, WindowsData,
-  WmEvent, WorkspacesData, DEFAULT_IPC_PORT,
+  EventSubscriptionMessage, FocusedData, LayoutData, MonitorsData,
+  QueryCommand, ServerMessage, SubscribableEvent, TilingDirectionData,
+  WindowsData, WmEvent, WorkspacesData, DEFAULT_IPC_PORT,
 };
 
 use crate::{
@@ -237,6 +237,18 @@ impl IpcServer {
           ClientResponseData::TilingDirection(TilingDirectionData {
             direction_container: direction_container.to_dto()?,
             tiling_direction: direction_container.tiling_direction(),
+          })
+        }
+        QueryCommand::Layout => {
+          let direction_container = wm
+            .state
+            .focused_container()
+            .and_then(|focused| focused.direction_container())
+            .context("No direction container.")?;
+
+          ClientResponseData::Layout(LayoutData {
+            direction_container: direction_container.to_dto()?,
+            layout: direction_container.layout(),
           })
         }
         QueryCommand::Paused => {

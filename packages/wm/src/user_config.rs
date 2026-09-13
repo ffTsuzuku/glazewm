@@ -83,7 +83,7 @@ impl UserConfig {
       config_path.parent().context("Invalid config path.")?;
 
     fs::create_dir_all(parent_dir).with_context(|| {
-      format!("Unable to create directory {}.", &config_path.display())
+      format!("Unable to create directory {}.", config_path.display())
     })?;
 
     fs::write(config_path, SAMPLE_CONFIG).with_context(|| {
@@ -376,5 +376,20 @@ impl UserConfig {
         true
       }
     })
+  }
+}
+
+#[cfg(test)]
+impl UserConfig {
+  pub fn mock() -> Self {
+    let config_value: ParsedConfig =
+      serde_yaml::from_str(SAMPLE_CONFIG).unwrap();
+    let window_rules_by_event = Self::window_rules_by_event(&config_value);
+    Self {
+      path: PathBuf::new(),
+      value: config_value,
+      value_str: SAMPLE_CONFIG.to_string(),
+      window_rules_by_event,
+    }
   }
 }

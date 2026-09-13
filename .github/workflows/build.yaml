@@ -1,6 +1,9 @@
 name: Build
 
 on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
   workflow_call:
     inputs:
       enable_ui_access:

@@ -54,6 +54,10 @@ gaps:
     bottom: '20px'
     left: '20px'
 
+  # Size of accordion padding for peeking windows in accordion (stacked) layout.
+  # Set to '0px' for pure 100% overlapping stack.
+  accordion_padding: '30px'
+
 window_effects:
   # Visual effects to apply to the focused window.
   focused_window:
@@ -220,6 +224,10 @@ keybindings:
   # be inserted.
   - commands: ['toggle-tiling-direction']
     bindings: ['alt+v']
+
+  # Toggle container layout between standard tiling and accordion (stacked).
+  - commands: ['toggle-layout']
+    bindings: ['alt+s']
 
   # Change focus from tiling windows -> floating -> fullscreen.
   - commands: ['wm-cycle-focus']
