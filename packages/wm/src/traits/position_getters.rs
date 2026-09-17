@@ -185,7 +185,13 @@ macro_rules! impl_position_getters_as_resizable {
 
 #[cfg(test)]
 mod tests {
+  use wm_common::{ContainerLayout, FullscreenStateConfig, WindowState};
+
   use super::*;
+  use crate::{
+    models::{Monitor, NonTilingWindow, TilingWindow, Workspace},
+    traits::CommonGetters,
+  };
 
   #[test]
   fn test_accordion_padding_single_child() {
@@ -225,5 +231,28 @@ mod tests {
   fn test_accordion_zero_padding() {
     assert_eq!(calculate_accordion_padding(3, 0, 1, 0), (0, 0));
     assert_eq!(calculate_accordion_padding(3, 1, 1, 0), (0, 0));
+  }
+
+  #[test]
+  fn accordion_rect_skips_focused_fullscreen_window() {
+    let tiling_window = TilingWindow::mock().call();
+    let fullscreen_window = NonTilingWindow::mock()
+      .state(WindowState::Fullscreen(FullscreenStateConfig::default()))
+      .call();
+    let workspace = Workspace::mock()
+      .layout(ContainerLayout::Accordion)
+      .tiling_containers(vec![tiling_window.clone().into()])
+      .non_tiling_windows(vec![fullscreen_window.clone()])
+      .call();
+    let _monitor =
+      Monitor::mock().workspaces(vec![workspace.clone()]).call();
+
+    {
+      let mut focus_order = workspace.borrow_child_focus_order_mut();
+      focus_order.clear();
+      focus_order.extend([fullscreen_window.id(), tiling_window.id()]);
+    }
+
+    assert!(tiling_window.to_rect().is_ok());
   }
 }

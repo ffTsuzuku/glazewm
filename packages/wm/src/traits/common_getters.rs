@@ -115,17 +115,13 @@ pub trait CommonGetters {
 
   /// Children in order of last focus.
   fn child_focus_order(&self) -> Box<dyn Iterator<Item = Container> + '_> {
-    let child_focus_order = self.borrow_child_focus_order();
+    let child_focus_order = self.borrow_child_focus_order().clone();
 
-    Box::new(std::iter::from_fn(move || {
-      for child_id in child_focus_order.iter() {
-        if let Some(child) = self.child_by_id(child_id) {
-          return Some(child);
-        }
-      }
-
-      None
-    }))
+    Box::new(
+      child_focus_order
+        .into_iter()
+        .filter_map(move |child_id| self.child_by_id(&child_id)),
+    )
   }
 
   /// Leaf nodes (i.e. windows and workspaces) in order of last focus.
@@ -374,4 +370,40 @@ macro_rules! impl_common_getters {
       }
     }
   };
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::models::{NonTilingWindow, TilingWindow, Workspace};
+
+  #[test]
+  fn child_focus_order_iterates_each_child_once() {
+    let tiling_window = TilingWindow::mock().call();
+    let non_tiling_window = NonTilingWindow::mock().call();
+    let workspace = Workspace::mock()
+      .tiling_containers(vec![tiling_window.clone().into()])
+      .non_tiling_windows(vec![non_tiling_window.clone()])
+      .call();
+
+    // A fullscreen/floating window can be ahead of tiling windows in the
+    // focus order. Iteration must advance past it instead of repeatedly
+    // yielding the first child.
+    {
+      let mut focus_order = workspace.borrow_child_focus_order_mut();
+      focus_order.clear();
+      focus_order.extend([non_tiling_window.id(), tiling_window.id()]);
+    }
+
+    let child_ids = workspace
+      .child_focus_order()
+      .take(3)
+      .map(|child| child.id())
+      .collect::<Vec<_>>();
+
+    assert_eq!(
+      child_ids,
+      vec![non_tiling_window.id(), tiling_window.id()]
+    );
+  }
 }
