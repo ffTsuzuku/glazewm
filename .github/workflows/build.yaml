@@ -83,3 +83,65 @@ jobs:
           if-no-files-found: error
           name: build-${{ matrix.target }}
           path: temp
+
+  publish-nightly:
+    name: Publish nightly release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: build-*
+          merge-multiple: true
+
+      - name: Create release archives
+        shell: bash
+        run: |
+          mkdir release
+
+          tar -C target/x86_64-apple-darwin/release -czf \
+            release/glazewm-nightly-x86_64-apple-darwin.tar.gz \
+            glazewm glazewm-cli
+          tar -C target/aarch64-apple-darwin/release -czf \
+            release/glazewm-nightly-aarch64-apple-darwin.tar.gz \
+            glazewm glazewm-cli
+
+          zip -j release/glazewm-nightly-x86_64-pc-windows-msvc.zip \
+            target/x86_64-pc-windows-msvc/release/glazewm.exe \
+            target/x86_64-pc-windows-msvc/release/glazewm-cli.exe \
+            target/x86_64-pc-windows-msvc/release/glazewm-watcher.exe
+          zip -j release/glazewm-nightly-aarch64-pc-windows-msvc.zip \
+            target/aarch64-pc-windows-msvc/release/glazewm.exe \
+            target/aarch64-pc-windows-msvc/release/glazewm-cli.exe \
+            target/aarch64-pc-windows-msvc/release/glazewm-watcher.exe
+
+      - name: Publish rolling nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: nightly
+        shell: bash
+        run: |
+          NOTES="Automated development build from commit ${GITHUB_SHA}."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh api --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TAG}" \
+              -f sha="$GITHUB_SHA" \
+              -F force=true
+            gh release edit "$TAG" \
+              --title "Nightly build" \
+              --notes "$NOTES" \
+              --prerelease
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Nightly build" \
+              --notes "$NOTES" \
+              --prerelease
+          fi
+
+          gh release upload "$TAG" release/* --clobber
